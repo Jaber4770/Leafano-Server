@@ -1,8 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = process.env.port || 3000;
-require('dotenv').config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
 // middleware
@@ -30,13 +30,17 @@ async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
-        const userCollection = client.db("leafano").collection('users');
+        const userCollection = client.db("Gardeners").collection('users');
+        const gardenersCollection = client.db("Gardeners").collection('GardenersCollection');
 
         app.get('/users', async (req, res) => {
-            const cursor = userCollection.find();
+            const cursor = userCollection.find({status:'active'}).limit(6);
             const result = await cursor.toArray();
             res.send(result);
         })
+        app.get('/GardenersCollection', async(req, res) => {
+            res.send("hello");
+})
 
 
 
