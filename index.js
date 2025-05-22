@@ -31,8 +31,8 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         const userCollection = client.db("Gardeners").collection('users');
-        const gardenersCollection = client.db("Gardeners").collection('GardenersCollection');
-        const trendingTips = client.db("Gardeners").collection('topTrendingTips');
+        const trendingTipsCollection = client.db("Gardeners").collection('topTrendingTips');
+        const gardenersCollection = client.db("Gardeners").collection('gardeners');
 
         app.get('/users', async (req, res) => {
             const cursor = userCollection.find({status:'active'}).limit(6);
@@ -43,8 +43,16 @@ async function run() {
             res.send("hello");
         })
         app.get('/topTrendingTips', async (req, res) => {
-            const cursor = trendingTips.find();
+            const cursor = trendingTipsCollection.find();
             const result = await cursor.toArray();
+            res.send(result);
+        })
+        app.get('/gardeners', async (req, res) => {
+            res.send('hello gardeners');
+        })
+        app.post('/gardeners', async (req, res) => {
+            const singleGarder = req.body;
+            const result = await gardenersCollection.insertOne(singleGarder);
             res.send(result);
         })
 
