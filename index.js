@@ -33,6 +33,7 @@ async function run() {
         const userCollection = client.db("Gardeners").collection('users');
         const trendingTipsCollection = client.db("Gardeners").collection('topTrendingTips');
         const gardenersCollection = client.db("Gardeners").collection('gardeners');
+        const tipsCollection = client.db("Gardeners").collection('gardenersTips');
 
         app.get('/users', async (req, res) => {
             const cursor = userCollection.find({status:'active'}).limit(6);
@@ -48,11 +49,23 @@ async function run() {
             res.send(result);
         })
         app.get('/gardeners', async (req, res) => {
-            res.send('hello gardeners');
+            const cursor = gardenersCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
         })
         app.post('/gardeners', async (req, res) => {
             const singleGarder = req.body;
             const result = await gardenersCollection.insertOne(singleGarder);
+            res.send(result);
+        })
+        app.get('/gardenersTips', async (req, res) => {
+            const cursor = tipsCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+        app.post('/gardenersTips', async (req, res) => {
+            const tip = req.body;
+            const result = await tipsCollection.insertOne(tip);
             res.send(result);
         })
 
