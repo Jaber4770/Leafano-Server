@@ -36,11 +36,11 @@ async function run() {
         const tipsCollection = client.db("Gardeners").collection('gardenersTips');
 
         app.get('/users', async (req, res) => {
-            const cursor = userCollection.find({status:'active'}).limit(6);
+            const cursor = userCollection.find({ status: 'active' }).limit(6);
             const result = await cursor.toArray();
             res.send(result);
         })
-        app.get('/GardenersCollection', async(req, res) => {
+        app.get('/GardenersCollection', async (req, res) => {
             res.send("hello");
         })
         app.get('/topTrendingTips', async (req, res) => {
@@ -59,8 +59,12 @@ async function run() {
             res.send(result);
         })
         app.get('/gardenersTips', async (req, res) => {
-            const cursor = tipsCollection.find();
-            const result = await cursor.toArray();
+            const email = req.query.email;
+            let query = {};
+            if (email) {
+                query = { email }
+            };
+            const result = await tipsCollection.find(query).toArray();
             res.send(result);
         })
         app.post('/gardenersTips', async (req, res) => {
@@ -84,5 +88,5 @@ run().catch(console.dir);
 
 
 app.listen(port, () => {
-    console.log(`Port is listening on:, ${ port }`);
+    console.log(`Port is listening on:, ${port}`);
 })
