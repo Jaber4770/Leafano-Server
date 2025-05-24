@@ -72,14 +72,23 @@ async function run() {
             const result = await tipsCollection.insertOne(tip);
             res.send(result);
         })
+        app.patch('/gardenersTips/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updatedFields = req.body;
 
+            const updateDoc = {
+                $set: updatedFields
+            };
+            const result = await tipsCollection.updateOne(query, updateDoc);
+            res.send(result);
+        })
         app.delete('/gardenersTips/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await tipsCollection.deleteOne(query);
             res.send(result);
-
-})
+        })
 
 
 
