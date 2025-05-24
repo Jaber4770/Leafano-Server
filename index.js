@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = process.env.port || 3000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // middleware
 app.use(cors());
@@ -72,6 +72,14 @@ async function run() {
             const result = await tipsCollection.insertOne(tip);
             res.send(result);
         })
+
+        app.delete('/gardenersTips/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await tipsCollection.deleteOne(query);
+            res.send(result);
+
+})
 
 
 
