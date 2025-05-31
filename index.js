@@ -6,7 +6,16 @@ const port = process.env.port || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'https://leafano.netlify.app',
+        'https://leafano-8ca4e.firebaseapp.com',
+        'https://leafano-8ca4e.web.app',
+        'https://leafano.surge.sh'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+}));
 app.use(express.json());
 
 
@@ -29,7 +38,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         const userCollection = client.db("Gardeners").collection('users');
         const trendingTipsCollection = client.db("Gardeners").collection('topTrendingTips');
         const gardenersCollection = client.db("Gardeners").collection('gardeners');
@@ -53,20 +62,83 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         })
+        app.get('/gardeners/:id', async (req, res) => {
+            const id = req.params.id;;
+            const query = { _id: new ObjectId(id) };
+            const result = await gardenersCollection.findOne(query);
+            res.send(result);
+        })
         app.post('/gardeners', async (req, res) => {
             const singleGarder = req.body;
             const result = await gardenersCollection.insertOne(singleGarder);
             res.send(result);
         })
+        app.put('/gardeners/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+
+            try {
+                const result = await gardenersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updateData }
+                );
+
+                res.send(result); // result.modifiedCount will indicate success
+            } catch (err) {
+                res.status(500).send({ error: "Failed to update profile" });
+            }
+        });
+
         app.get('/gardenersTips', async (req, res) => {
             const email = req.query.email;
-            let query = {};
+            const difficulty = req.query.difficulty; // For filtering only
+            const sortByDifficulty = req.query.sortByDifficulty === 'true';
+            const limit = parseInt(req.query.limit) || 6;
+            const skip = parseInt(req.query.skip) || 0;
+
+            let match = {};
             if (email) {
-                query = { email }
-            };
-            const result = await tipsCollection.find(query).toArray();
+                match.email = email;
+            }
+            if (difficulty) {
+                match.difficultyLevel = difficulty; // Use difficultyLevel here
+            }
+
+            const pipeline = [
+                { $match: match },
+                {
+                    $addFields: {
+                        difficultyValue: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ["$difficultyLevel", "Easy"] }, then: 1 },
+                                    { case: { $eq: ["$difficultyLevel", "Medium"] }, then: 2 },
+                                    { case: { $eq: ["$difficultyLevel", "Hard"] }, then: 3 }
+                                ],
+                                default: 4
+                            }
+                        }
+                    }
+                },
+                {
+                    $sort: sortByDifficulty
+                        ? { difficultyValue: 1, like: -1 }
+                        : { like: -1 }
+                },
+                { $skip: skip },
+                { $limit: limit }
+            ];
+
+            const result = await tipsCollection.aggregate(pipeline).toArray();
             res.send(result);
-        })
+        });
+        
+        
+        
+        
+        
+
+
         app.post('/gardenersTips', async (req, res) => {
             const tip = req.body;
             const result = await tipsCollection.insertOne(tip);
@@ -75,14 +147,17 @@ async function run() {
         app.patch('/gardenersTips/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
-            const updatedFields = req.body;
+            // const updatedFields = req.body;
 
             const updateDoc = {
-                $set: updatedFields
+                $set: req.body
             };
+
             const result = await tipsCollection.updateOne(query, updateDoc);
             res.send(result);
         })
+
+
         app.delete('/gardenersTips/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
