@@ -37,7 +37,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         const userCollection = client.db("Gardeners").collection('users');
         const trendingTipsCollection = client.db("Gardeners").collection('topTrendingTips');
         const gardenersCollection = client.db("Gardeners").collection('gardeners');
@@ -94,6 +94,8 @@ async function run() {
             const sortByDifficulty = req.query.sortByDifficulty === 'true';
             const limit = parseInt(req.query.limit) || 6;
             const skip = parseInt(req.query.skip) || 0;
+            const sortByNameAsc = req.query.sort === 'asc';
+
 
             let match = {};
             if (email) {
@@ -120,9 +122,12 @@ async function run() {
                     }
                 },
                 {
-                    $sort: sortByDifficulty
-                        ? { difficultyValue: 1, like: -1 }
-                        : { like: -1 }
+                    $sort: sortByNameAsc
+                        ? { title: 1 } // assuming each tip has a title or name field
+                        : sortByDifficulty
+                            ? { difficultyValue: 1, like: -1 }
+                            : { like: -1 }
+
                 },
                 { $skip: skip },
                 { $limit: limit }
@@ -131,8 +136,6 @@ async function run() {
             const result = await tipsCollection.aggregate(pipeline).toArray();
             res.send(result);
         });
-          
-        
 
         app.post('/gardenersTips', async (req, res) => {
             const tip = req.body;
