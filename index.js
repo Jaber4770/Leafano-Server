@@ -23,7 +23,6 @@ app.get('/', (req, res) => {
     res.send("server geeting warmer!");
 })
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.61690px.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -38,14 +37,14 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        // await client.connect();
+        await client.connect();
         const userCollection = client.db("Gardeners").collection('users');
         const trendingTipsCollection = client.db("Gardeners").collection('topTrendingTips');
         const gardenersCollection = client.db("Gardeners").collection('gardeners');
         const tipsCollection = client.db("Gardeners").collection('gardenersTips');
 
         app.get('/users', async (req, res) => {
-            const cursor = userCollection.find({ status: 'active' }).limit(6);
+            const cursor = userCollection.find({ status: 'active' }).limit(8);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -91,7 +90,7 @@ async function run() {
 
         app.get('/gardenersTips', async (req, res) => {
             const email = req.query.email;
-            const difficulty = req.query.difficulty; // For filtering only
+            const difficulty = req.query.difficulty;
             const sortByDifficulty = req.query.sortByDifficulty === 'true';
             const limit = parseInt(req.query.limit) || 6;
             const skip = parseInt(req.query.skip) || 0;
@@ -101,7 +100,7 @@ async function run() {
                 match.email = email;
             }
             if (difficulty) {
-                match.difficultyLevel = difficulty; // Use difficultyLevel here
+                match.difficultyLevel = difficulty;
             }
 
             const pipeline = [
@@ -113,7 +112,7 @@ async function run() {
                                 branches: [
                                     { case: { $eq: ["$difficultyLevel", "Easy"] }, then: 1 },
                                     { case: { $eq: ["$difficultyLevel", "Medium"] }, then: 2 },
-                                    { case: { $eq: ["$difficultyLevel", "Hard"] }, then: 3 }
+                                    { case: { $eq: ["$difficultyLevel", "Hard"] }, then: 3 },
                                 ],
                                 default: 4
                             }
@@ -132,12 +131,8 @@ async function run() {
             const result = await tipsCollection.aggregate(pipeline).toArray();
             res.send(result);
         });
+          
         
-        
-        
-        
-        
-
 
         app.post('/gardenersTips', async (req, res) => {
             const tip = req.body;
